@@ -13,7 +13,7 @@ namespace ModelAttemptWPF
     public class OSN
     {
         public string name;
-        public int feedTimeFrame = 1000; // the number of timeslots to go back 
+        public int feedTimeFrame = 150; // the number of timeslots to go back 
 
         private Process process = null; // for python connection
         public string followCSVPath = @"C:\Users\Anni\Documents\Uni\Computer Science\Proj\CSVs and text files\FacebookUK\follows";
@@ -69,7 +69,7 @@ namespace ModelAttemptWPF
             // Choose n people from the population to make accounts
             for (int i = 0; i < n; i++)
             {
-                // Pick a random person
+                // Pick the next person (there is no pattern to the order of people in the population so this is effectively random)
                 Person person = population[i];
                 // Make them an account
                 this.NewAccount(person);
