@@ -48,7 +48,7 @@ namespace ModelAttemptWPF
         public int fixedNTrue;
         public int dpNumber;
 
-        public List<int> values;
+        public List<double> values;
         
         public MainWindow()
         {
@@ -57,10 +57,10 @@ namespace ModelAttemptWPF
             this.fixedNFake = 100;
             this.fixedNTrue = 200;
             //this.values = new List<int> { 1, 2, 4, 6, 8, 10, 12 };
-            this.values = new List<int> {20};
+            this.values = new List<double> {0.4,1};
             this.dpNumber = 0;
 
-            this.UKDistributionSimulation("FTFWithShareProbs20", fixedN, fixedK, fixedNFake, fixedNTrue, values[0]);
+            this.UKDistributionSimulation("OL40", fixedN, fixedK, fixedNFake, fixedNTrue, values[0]);
         }
 
         private void SetClockFunctions()
@@ -93,14 +93,14 @@ namespace ModelAttemptWPF
         }
 
      
-        private void UKDistributionSimulation(string name,int n,int k=100,int nFake=20,int nTrue=20,int feedTimeFrame=100)
+        private void UKDistributionSimulation(string name,int n,int k=100,int nFake=20,int nTrue=20,double  nMean=(3.24/5))
         {
            
 
             //this.Activate();
-            this.simulation = new Simulation(name, 10, feedTimeFrame);
+            this.simulation = new Simulation(name, 10,  nMean);
             this.simulation.DistributionPopulate(n);
-            this.facebook = new Facebook("FacebookUK",feedTimeFrame);
+            this.facebook = new Facebook("FacebookUK");
 
             // Give facebook a small initial population
             int defaultFollows = n/2;
@@ -157,31 +157,7 @@ namespace ModelAttemptWPF
         }
 
 
-        // Sci Chart Stuff
-        public void CreateTestSciChart()
-        {
-            // Create the chart surface
-            var sciChartSurface = new SciChartSurface();
 
-            // Create the X and Y Axis
-            var xAxis = new NumericAxis() { AxisTitle = "Number of Samples (per series)" };
-            var yAxis = new NumericAxis() { AxisTitle = "Value" };
-
-            sciChartSurface.XAxis = xAxis;
-            sciChartSurface.YAxis = yAxis;
-
-            // Specify Interactivity Modifiers
-            sciChartSurface.ChartModifier = new ModifierGroup(new RubberBandXyZoomModifier(), new ZoomExtentsModifier());
-            // Add annotation hints to the user
-            var textAnnotation = new TextAnnotation()
-            {
-                Text = "Hello World!",
-                X1 = 5.0,
-                Y1 = 5.0
-            };
-            sciChartSurface.Annotations.Add(textAnnotation);
-            this.InitializeComponent();
-        }
   
        
         private void SimulationEnd(Simulation simulation)
@@ -243,7 +219,6 @@ namespace ModelAttemptWPF
 
 
             CreateNSharesCSV(generalPath);
-            // now undo clock functions
 
             MakeNextSimulation(simulation);
             
@@ -258,9 +233,10 @@ namespace ModelAttemptWPF
                 
                 if (this.dpNumber<values.Count)
                 {
-                    int newNPostsPerTrue = values[this.dpNumber];
-                    string newName = currentSimulation.versionName.Remove(currentSimulation.versionName.Length - 2) + newNPostsPerTrue.ToString();
-                    this.UKDistributionSimulation(newName, fixedN, fixedK, fixedNFake, fixedNTrue, newNPostsPerTrue);
+                    double newValue = values[this.dpNumber];
+                    string endFileName = Convert.ToInt64((newValue * 100)).ToString();
+                    string newName = currentSimulation.versionName.Remove(currentSimulation.versionName.Length - 2) + endFileName;
+                    this.UKDistributionSimulation(newName, fixedN, fixedK, fixedNFake, fixedNTrue, newValue);
                 }
                 else // if all the desired setting values have been simulated
                 {
@@ -269,7 +245,7 @@ namespace ModelAttemptWPF
             }
             else
             {
-                this.UKDistributionSimulation(currentSimulation.versionName, fixedN, fixedK, fixedNFake, fixedNTrue, currentSimulation.feedTimeFrame);
+                this.UKDistributionSimulation(currentSimulation.versionName, fixedN, fixedK, fixedNFake, fixedNTrue, currentSimulation.value);
                 this.simulation.runNumber = currentSimulation.runNumber + 1;
             }
             
@@ -279,11 +255,11 @@ namespace ModelAttemptWPF
         public void CreateNSharesCSV(string generalPath)
         {
             var csv = new StringBuilder();
-            csv.AppendLine("ID,nFollowers,o,c,e,a,n,Online Literacy,Political Leaning,nFakeShares,nTrueShares"); // column headings
+            csv.AppendLine("ID,nFollowers,o,c,e,a,n,Online Literacy,Political Leaning,nFakeShares,nTrueShares,freqUse,sessionLength,shareFreq"); // column headings
             foreach (Account account in facebook.accountList)
             {
                 Console.WriteLine("OL in write:" + account.person.onlineLiteracy);
-                var line = String.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10}", account.ID, account.followers.Count, account.person.o, account.person.c, account.person.e, account.person.a, account.person.n, account.person.onlineLiteracy, account.person.politicalLeaning, account.person.nFakeShares, account.person.nTrueShares);// o,c,e,a,n,OL,PL nFakeShares, nTrueShares
+                var line = String.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13}", account.ID, account.followers.Count, account.person.o, account.person.c, account.person.e, account.person.a, account.person.n, account.person.onlineLiteracy, account.person.politicalLeaning,account.person.nFakeShares, account.person.nTrueShares,account.person.freqUse,account.person.sessionLength, account.person.sharingFreq);// o,c,e,a,n,OL,PL nFakeShares, nTrueShares
                 csv.AppendLine(line);
             }
             File.WriteAllText(generalPath+"NsharesPopulation.csv", csv.ToString());
